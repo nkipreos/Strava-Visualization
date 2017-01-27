@@ -42,4 +42,4 @@ bower.json
 .byebug_history
 environment
 .DS_Store
-db/seeds/Strava/*.route
+db/seeds/strava/*.route
