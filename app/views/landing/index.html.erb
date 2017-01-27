@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <title>Map Places</title>
+        <%= "<script src='https://maps.googleapis.com/maps/api/js?v=3.exp&key=#{ENV['GOOGLE_MAPS_KEY']}&libraries=places'></script>".html_safe %>
+    </head>
+    <body>
+   
+    <div id="map"></div>
+    <div id="marker_info"></div>
+
+    </body>
+</html>
+
+<script type="text/javascript">
+  $(document).ready(function(){
+    var myLatLng = {lat: <%= @centerlat %>, lng: <%= @centerlng %>};
+    map = new google.maps.Map(document.getElementById('map'), {
+      zoom: 4,
+      center: myLatLng
+    });
+    marker = {};
+    infowindow = {};
+    polyline = {};
+
+    function addMarker(strava_id, name, distance, total_elevation_gain, coordinates, lat, lng) {
+      marker[strava_id] = new google.maps.Marker({
+        position: new google.maps.LatLng(lat, lng),
+        map: map,
+        icon: '/bike.png'
+      });
+      var content = "<h2>" + name + "</h2>" +
+        "<b>Distancia</b>: " + (distance/1000).toFixed(2) + " km.<br />" +
+        "<b>Elevación Acum.</b>: " + total_elevation_gain + " mts."
+      infowindow[strava_id] = new google.maps.InfoWindow({
+        content: content
+      });
+      marker[strava_id].addListener('click', function() {
+        closeAllInfoWindows();
+        hidePolylines();
+        infowindow[strava_id].open(map, marker[strava_id]);
+        var polyline_coords = [];
+        JSON.parse(coordinates).map(function(coord){
+          polyline_coords.push({lat: coord[0], lng: coord[1]})
+        });
+        polyline[strava_id] = new google.maps.Polyline({
+          path: polyline_coords,
+          geodesic: true,
+          strokeColor: '#FF0000',
+          strokeOpacity: 1.0,
+          strokeWeight: 2
+        });
+        var bounds = new google.maps.LatLngBounds();
+        for (var i = 0; i < polyline_coords.length; i++) {
+            bounds.extend(polyline_coords[i]);
+        }
+        map.fitBounds(bounds);
+        polyline[strava_id].setMap(map);
+      });
+
+      marker[strava_id].addListener('mouseover', function() {
+        $("#marker_info").html(content);
+        $("#marker_info").css('visibility','visible')
+      });
+
+      marker[strava_id].addListener('mouseout', function() {
+        $("#marker_info").css('visibility','hidden')
+      });
+    }
+
+    function closeAllInfoWindows(){
+      for( key in infowindow ){
+        infowindow[key].close();
+      }
+    }
+
+    function hidePolylines(){
+      for( key in polyline ){
+        polyline[key].visible = false;
+        polyline[key].setMap(map);
+      }
+    }
+
+    <% @activities.each do |activity| %>
+      addMarker("<%= activity['strava_id'] %>", "<%= activity['name'] %>", "<%= activity['distance'] %>", "<%= activity['total_elevation_gain'] %>", "<%= Polylines::Decoder.decode_polyline(activity['summary_polyline']) %>", <%= activity['start_lat'] %>, <%= activity['start_lng'] %>);
+    <% end %>
+
+    
+  });
+</script>
