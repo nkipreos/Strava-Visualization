@@ -87,7 +87,7 @@
     }
 
     <% @activities.each do |activity| %>
-      addMarker("<%= activity['strava_id'] %>", "<%= activity['name'] %>", "<%= activity['distance'] %>", "<%= activity['total_elevation_gain'] %>", "<%= Polylines::Decoder.decode_polyline(activity['summary_polyline']) %>", <%= activity['start_lat'] %>, <%= activity['start_lng'] %>);
+      addMarker("<%= activity['strava_id'] %>", "<%= activity['name'] %>", "<%= activity['distance'] %>", "<%= activity['total_elevation_gain'] %>", "<%= Polylines::Decoder.decode_polyline(activity['polyline']) %>", <%= activity['start_lat'] %>, <%= activity['start_lng'] %>);
     <% end %>
 
     
